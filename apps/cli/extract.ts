@@ -36,8 +36,9 @@ const jsonSchema = {
 async function extract(text: string, maxTokens = 1500): Promise<Ticket> {
   const res = await client.chat.completions.create({
     model,
-    temperature: 1,
+    temperature: 0,
     max_completion_tokens: maxTokens,
+    reasoning_effort: "none",
     messages: [
       {
         role: "system",
