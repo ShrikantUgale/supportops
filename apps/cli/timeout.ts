@@ -22,7 +22,8 @@ async function main() {
       );
       if (attempt < 3) {
         // NEW
-        const delay = 500 * 2 ** (attempt - 1); // NEW: 500, then 1000
+        const ceiling = 500 * 2 ** (attempt - 1);
+        const delay = Math.round(Math.random() * ceiling);
         console.log(`  waiting ${delay}ms`); // NEW
         await sleep(delay); // NEW
       }
