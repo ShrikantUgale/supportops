@@ -1,18 +1,25 @@
 import "dotenv/config";
 import OpenAI from "openai";
 
-const client = new OpenAI({ timeout: 1, maxRetries: 0 }); // wait at most 1 millisecond, try with and without retry
+const client = new OpenAI({ timeout: 1, maxRetries: 0 });
 
 async function main() {
   const start = Date.now();
-  try {
-    await client.chat.completions.create({
-      model: process.env.MODEL!,
-      messages: [{ role: "user", content: "hi" }],
-    });
-  } catch (e) {
-    console.log((e as Error).constructor.name, "-", (e as Error).message);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await client.chat.completions.create({
+        model: process.env.MODEL!,
+        messages: [{ role: "user", content: "hi" }],
+      });
+      console.log("success");
+      return;
+    } catch (e) {
+      console.log(
+        `attempt ${attempt} failed at ${Date.now() - start}ms:`,
+        (e as Error).constructor.name,
+      );
+    }
   }
-  console.log("took", Date.now() - start, "ms");
+  console.log("gave up");
 }
 main();
