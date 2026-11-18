@@ -1,0 +1,31 @@
+{
+  "name": "supportops",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShrikantUgale/supportops.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/ShrikantUgale/supportops/issues"
+  },
+  "homepage": "https://github.com/ShrikantUgale/supportops#readme",
+  "dependencies": {
+    "dotenv": "^18.0.10",
+    "openai": "^7.59.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
