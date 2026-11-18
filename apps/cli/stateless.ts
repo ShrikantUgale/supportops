@@ -3,11 +3,11 @@ import OpenAI from "openai";
 
 const client = new OpenAI();
 const model = process.env.MODEL!;
-const globalMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
+const chatMemory: OpenAI.Chat.ChatCompletionMessageParam[] = [];
 
 async function ask(messages: OpenAI.Chat.ChatCompletionMessageParam[]) {
   const res = await client.chat.completions.create({ model, messages });
-  globalMessages.push({
+  chatMemory.push({
     role: "assistant",
     content: res.choices[0].message.content,
   });
@@ -17,13 +17,13 @@ async function ask(messages: OpenAI.Chat.ChatCompletionMessageParam[]) {
   return res.choices[0].message.content;
 }
 
-globalMessages.push({
+chatMemory.push({
   role: "user",
   content: "Hello, My name is Shrikant!",
 });
-console.log(await ask(globalMessages));
-globalMessages.push({
+console.log(await ask(chatMemory));
+chatMemory.push({
   role: "user",
   content: "What's my name?",
 });
-console.log(await ask(globalMessages));
+console.log(await ask(chatMemory));
