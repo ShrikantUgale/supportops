@@ -8,6 +8,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
   for (let attempt = 1; ; attempt++) {
     try {
+      console.log(`Attempt ${attempt} of ${maxAttempts}`);
       return await fn();
     } catch (e) {
       if (!isRetryable(e) || attempt >= maxAttempts) {
@@ -56,6 +57,30 @@ async function main() {
     );
   } catch (e) {
     console.log("B gave up with:", (e as Error).constructor.name);
+  }
+
+  // Test C: nothing is listening at this address
+  const dead = new OpenAI({
+    baseURL: "http://localhost:9/v1",
+    apiKey: "x",
+    maxRetries: 0,
+  });
+  const start = Date.now();
+  try {
+    await withRetry(() =>
+      dead.chat.completions.create({
+        model: "anything",
+        messages: [{ role: "user", content: "hi" }],
+      }),
+    );
+  } catch (e) {
+    console.log(
+      "C gave up with:",
+      (e as Error).constructor.name,
+      "after",
+      Date.now() - start,
+      "ms",
+    );
   }
 }
 
