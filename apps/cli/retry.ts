@@ -8,7 +8,6 @@ export async function withRetry<T>(
 ): Promise<T> {
   for (let attempt = 1; ; attempt++) {
     try {
-      console.log(`Attempt ${attempt} of ${maxAttempts}`);
       return await fn();
     } catch (e) {
       if (!isRetryable(e) || attempt >= maxAttempts) {
