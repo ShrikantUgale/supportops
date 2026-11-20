@@ -1,7 +1,11 @@
 import "dotenv/config";
 import OpenAI from "openai";
 
-const client = new OpenAI({ maxRetries: 0 });
+const client = new OpenAI({
+  baseURL: "http://localhost:4010/v1",
+  apiKey: "x",
+  maxRetries: 0,
+});
 const call = () =>
   client.chat.completions.create({
     model: process.env.MODEL!,
@@ -27,7 +31,7 @@ async function burst(n: number) {
 }
 
 async function main() {
-  await burst(300);
+  await burst(50);
   // let s = Date.now();
   // for (let i = 0; i < 5; i++) await call();
   // console.log("sequential x5:", Date.now() - s, "ms");
