@@ -1,36 +1,8 @@
 import "dotenv/config";
 import OpenAI from "openai";
+import { withRetry } from "./retry";
 
 const client = new OpenAI({ maxRetries: 0 });
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      console.log(`Attempt ${attempt} of ${maxAttempts}`);
-      return await fn();
-    } catch (e) {
-      if (!isRetryable(e) || attempt >= maxAttempts) {
-        throw e;
-      }
-
-      const ceiling = 500 * 2 ** (attempt - 1);
-      const delay = Math.round(Math.random() * ceiling);
-      console.log(`  waiting ${delay}ms`); // NEW
-      await sleep(delay); // NEW
-    }
-  }
-}
-
-function isRetryable(e: unknown): boolean {
-  if (e instanceof OpenAI.APIConnectionError) return true;
-  if (e instanceof OpenAI.APIError) {
-    if (e.status === 429 || e.status === 408) return true;
-    if (e.status && e.status >= 500) return true;
-  }
-  return false;
-}
 
 async function main() {
   // Test A: works normally
@@ -61,7 +33,7 @@ async function main() {
 
   // Test C: nothing is listening at this address
   const dead = new OpenAI({
-    baseURL: "http://localhost:9/v1",
+    baseURL: "http://localhost:4010/v1",
     apiKey: "x",
     maxRetries: 0,
   });

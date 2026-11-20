@@ -1,5 +1,6 @@
 import "dotenv/config";
 import OpenAI from "openai";
+import { withRetry } from "./retry";
 
 const client = new OpenAI({
   baseURL: "http://localhost:4010/v1",
@@ -16,7 +17,7 @@ const call = () =>
 async function burst(n: number) {
   const s = Date.now();
   const results = await Promise.allSettled(
-    Array.from({ length: n }, () => call()),
+    Array.from({ length: n }, () => withRetry(() => call())),
   );
 
   const tally: Record<string, number> = {};
