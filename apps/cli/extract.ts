@@ -1,5 +1,6 @@
 import "dotenv/config";
 import OpenAI from "openai";
+import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
 const client = new OpenAI();
@@ -11,30 +12,11 @@ const TicketSchema = z.object({
   orderId: z.string().nullable(), // null when there is no order id in the message
   sentiment: z.enum(["positive", "neutral", "negative"]),
 });
+
 type Ticket = z.infer<typeof TicketSchema>;
 
-// 2. The same shape as JSON schema for the provider (strict mode rules:
-//    every property listed in `required`, additionalProperties: false)
-const jsonSchema = {
-  name: "ticket",
-  strict: true,
-  schema: {
-    type: "object",
-    properties: {
-      intent: {
-        type: "string",
-        enum: ["order_status", "refund", "complaint", "faq", "other"],
-      },
-      orderId: { type: ["string", "null"] },
-      sentiment: { type: "string", enum: ["positive", "neutral", "negative"] },
-    },
-    required: ["intent", "orderId", "sentiment"],
-    additionalProperties: false,
-  },
-} as const;
-
 async function extract(text: string, maxTokens = 1500): Promise<Ticket> {
-  const res = await client.chat.completions.create({
+  const res = await client.chat.completions.parse({
     model,
     temperature: 0,
     max_completion_tokens: maxTokens,
@@ -50,20 +32,31 @@ async function extract(text: string, maxTokens = 1500): Promise<Ticket> {
       },
       { role: "user", content: `<message>\n${text}\n</message>` },
     ],
-    response_format: { type: "json_schema", json_schema: jsonSchema },
+    response_format: zodResponseFormat(TicketSchema, "ticket"),
   });
 
   const choice = res.choices[0];
 
-  // Failure modes you must handle BEFORE parsing:
-  if (choice.message.refusal)
-    throw new Error(`Model refused: ${choice.message.refusal}`);
-  if (choice.finish_reason === "length")
-    throw new Error("Output truncated (hit max_tokens)");
-  if (!choice.message.content) throw new Error("Empty response");
+  if (!choice) {
+    throw new Error("No response received from the model");
+  }
 
-  const raw = JSON.parse(choice.message.content); // can still throw on malformed JSON
-  return TicketSchema.parse(raw); // throws ZodError if the shape is wrong
+  // Handle refusal
+  if (choice.message.refusal) {
+    throw new Error(`Model refused: ${choice.message.refusal}`);
+  }
+
+  // Handle incomplete response
+  if (choice.finish_reason === "length") {
+    throw new Error("Output truncated (hit max_tokens)");
+  }
+
+  // Handle empty parsed response
+  if (!choice.message.parsed) {
+    throw new Error("Failed to extract ticket");
+  }
+
+  return choice.message.parsed;
 }
 
 async function main() {
