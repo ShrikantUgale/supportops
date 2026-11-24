@@ -5,14 +5,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export async function withRetry<T>(
   fn: () => Promise<T>,
   maxAttempts = 3,
+  shouldRetry: (e: unknown) => boolean = isRetryable,
 ): Promise<T> {
   for (let attempt = 1; ; attempt++) {
     try {
       return await fn();
     } catch (e) {
-      if (!isRetryable(e) || attempt >= maxAttempts) {
-        throw e;
-      }
+      if (!shouldRetry(e) || attempt >= maxAttempts) throw e;
 
       const ceiling = 500 * 2 ** (attempt - 1);
       const delay = Math.round(Math.random() * ceiling);
