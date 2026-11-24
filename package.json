@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/ShrikantUgale/supportops#readme",
   "dependencies": {
+    "@openai/agents": "^0.22.0",
     "dotenv": "^18.0.10",
     "openai": "^7.59.0",
     "zod": "^4.6.7"
