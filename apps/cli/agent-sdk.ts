@@ -24,6 +24,16 @@ async function fakeDb(orderId: string) {
   return null; // not found
 }
 
+const getRefundPolicy = tool({
+  name: "get_refund_policy",
+  description:
+    "Get the store's refund policy: how many days customers have to request a refund and what is excluded.",
+  parameters: z.object({}),
+  async execute() {
+    return "Refunds are available within 30 days of delivery. Digital items and gift cards are not refundable.";
+  },
+});
+
 const getOrderStatus = tool({
   name: "get_order_status",
   description: "Look up the status of a customer's order by its order ID.",
@@ -51,19 +61,24 @@ const agent = new Agent({
   instructions:
     "You are a customer support assistant. Use tools to look up orders. Be brief and polite.",
   model: process.env.MODEL!,
-  tools: [getOrderStatus],
+  tools: [getOrderStatus, getRefundPolicy],
 });
+
+async function ask(q: string) {
+  const result = await run(agent, q, { maxTurns: 5 });
+  const called = result.newItems
+    .filter((i) => i.type === "tool_call_item")
+    .map((i) => (i as any).rawItem?.name);
+  console.log(
+    `\nQ: ${q}\ntools called: ${JSON.stringify(called)}\nA: ${result.finalOutput}`,
+  );
+}
 
 async function main() {
   try {
-    const result = await run(agent, "Where's my order 5000?", { maxTurns: 5 });
-    console.log("answer:", result.finalOutput);
-    for (const item of result.newItems) {
-      console.log(
-        item.type,
-        item.type === "tool_call_output_item" ? (item as any).output : "",
-      );
-    }
+    await ask("Where's my order 4412?");
+    await ask("What's your refund policy?");
+    await ask("Where's my order 4412, and can I still get a refund for it?");
   } catch (e) {
     console.log(
       "caught:",
@@ -73,4 +88,5 @@ async function main() {
     );
   }
 }
+
 main();
