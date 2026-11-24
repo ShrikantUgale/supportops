@@ -7,14 +7,23 @@ const getOrderStatus = tool({
   description: "Look up the status of a customer's order by its order ID.",
   parameters: z.object({ orderId: z.string() }),
   async execute({ orderId }) {
-    if (orderId === "4412")
+    try {
+      if (orderId === "5000") throw new Error("database connection lost");
+      if (orderId === "4412")
+        return JSON.stringify({
+          orderId,
+          status: "shipped",
+          carrier: "BlueDart",
+          daysInTransit: 10,
+        });
+      return JSON.stringify({ error: "order_not_found" });
+    } catch (e) {
+      console.error("tool failed", this.name, (e as Error).message);
       return JSON.stringify({
-        orderId,
-        status: "shipped",
-        carrier: "BlueDart",
-        daysInTransit: 10,
+        error: "temporarily_unavailable",
+        retryable: false,
       });
-    return JSON.stringify({ error: "order_not_found" });
+    }
   },
 });
 
@@ -27,7 +36,22 @@ const agent = new Agent({
 });
 
 async function main() {
-  const result = await run(agent, "Where's my order 9999?", { maxTurns: 1 });
-  console.log(result.finalOutput);
+  try {
+    const result = await run(agent, "Where's my order 4412?", { maxTurns: 5 });
+    console.log("answer:", result.finalOutput);
+    for (const item of result.newItems) {
+      console.log(
+        item.type,
+        item.type === "tool_call_output_item" ? (item as any).output : "",
+      );
+    }
+  } catch (e) {
+    console.log(
+      "caught:",
+      (e as Error).constructor.name,
+      "-",
+      (e as Error).message,
+    );
+  }
 }
 main();
